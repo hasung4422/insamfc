@@ -5,24 +5,41 @@ import { ChevronLeft, Clock, Trophy, TrendingUp, Loader2, Star, Users } from 'lu
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
-// 📅 기존 4주치 고정 일정 (디자인 유지)
-const FIXED_DATES = [
-  { weekTitle: "4월 2주차 현황", days: [{ date: "4월 11일 (토)", isSat: true }, { date: "4월 12일 (일)", isSat: false }] },
-  { weekTitle: "4월 3주차 현황", days: [{ date: "4월 18일 (토)", isSat: true }, { date: "4월 19일 (일)", isSat: false }] },
-  { weekTitle: "4월 4주차 현황", days: [{ date: "4월 25일 (토)", isSat: true }, { date: "4월 26일 (일)", isSat: false }] },
-  { weekTitle: "5월 1주차 현황", days: [{ date: "5월 02일 (토)", isSat: true }, { date: "5월 03일 (일)", isSat: false }] }
-];
-
 const TIMES = ["08:00 ~ 10:00", "10:00 ~ 12:00", "12:00 ~ 14:00"];
 
 export default function StatusPage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [voteData, setVoteData] = useState<any[]>([]);
   const [adminSession, setAdminSession] = useState<any>(null);
+  
+  // 💡 고정 날짜 대신, 실시간 날짜를 담을 공간
+  const [schedules, setSchedules] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchData() {
-      // 1. 💡 관리자가 생성한 활성 투표 게시판 정보 가져오기
+      // 1. 투표 페이지와 100% 동일하게 4주치 날짜를 자동 생성 (02일 같은 오타 원천 차단)
+      const weeks = [];
+      const today = new Date();
+      const firstSat = new Date(today);
+      firstSat.setDate(today.getDate() + (6 - today.getDay() + 7) % 7);
+      
+      for (let i = 0; i < 4; i++) {
+        const sat = new Date(firstSat);
+        sat.setDate(firstSat.getDate() + i * 7);
+        const sun = new Date(sat);
+        sun.setDate(sat.getDate() + 1);
+        
+        weeks.push({
+          weekTitle: `${sat.getMonth() + 1}월 ${Math.ceil(sat.getDate() / 7)}주차 현황`,
+          days: [
+            { date: `${sat.getMonth() + 1}월 ${sat.getDate()}일 (토)`, isSat: true },
+            { date: `${sun.getMonth() + 1}월 ${sun.getDate()}일 (일)`, isSat: false }
+          ]
+        });
+      }
+      setSchedules(weeks);
+
+      // 2. 관리자 특별 투표 가져오기
       const { data: session } = await supabase
         .from('match_sessions')
         .select('*')
@@ -33,7 +50,7 @@ export default function StatusPage() {
       
       if (session) setAdminSession(session);
 
-      // 2. 투표 데이터 전체 가져오기 (멤버 이름 포함)
+      // 3. 투표 데이터 싹 가져오기
       const { data: votes, error } = await supabase
         .from('votes')
         .select('session_id, match_date, match_time, members ( name )');
@@ -62,7 +79,7 @@ export default function StatusPage() {
 
       <main className="max-w-md mx-auto p-3 space-y-12 mt-2">
         
-        {/* ⭐ [특별 투표 현황] 활성화된 세션이 있을 때만 노출 */}
+        {/* ⭐ 특별 투표 현황 */}
         {adminSession && (
           <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-700">
             <div className="bg-[#2d6cef] text-white py-4 px-5 rounded-[2rem] shadow-lg relative overflow-hidden ring-4 ring-blue-100">
@@ -77,7 +94,7 @@ export default function StatusPage() {
             </div>
 
             <div className="grid gap-3 px-1">
-              {[...adminSession.match_date?.split(',').map((option: string) => option.trim()).filter(Boolean), '미참석'].map((option: string, idx: number) => {
+              {[...adminSession.match_date?.split(',').map((o: string) => o.trim()).filter(Boolean), '미참석'].map((option: string, idx: number) => {
                 const membersInOption = voteData
                   .filter(v => v.session_id === adminSession.id && v.match_date === option)
                   .map(v => v.members?.name)
@@ -117,12 +134,12 @@ export default function StatusPage() {
           </div>
         )}
 
-        {/* 📅 기존 4주차 현황 (원본 그대로 유지) */}
-        {FIXED_DATES.map((week, wIdx) => {
-          // 💡 [핵심 변경] "이번 주말(토, 일)" 전체를 통틀어서 가장 높은 득표수를 여기서 미리 구합니다!
+        {/* 📅 4주차 현황 (자동으로 생성된 schedules 사용) */}
+        {schedules.map((week, wIdx) => {
+          // 주말 통합 1위 구하기
           const weekMaxCount = Math.max(
             0,
-            ...week.days.flatMap(day => 
+            ...week.days.flatMap((day: any) => 
               TIMES.map(time => 
                 voteData.filter(v => !v.session_id && v.match_date === day.date && v.match_time === time).length
               )
@@ -137,7 +154,7 @@ export default function StatusPage() {
               </div>
 
               <div className="space-y-8">
-                {week.days.map((day, dIdx) => {
+                {week.days.map((day: any, dIdx: number) => {
                   const dayVotes = voteData.filter(v => !v.session_id && v.match_date === day.date);
                   
                   return (
@@ -159,7 +176,7 @@ export default function StatusPage() {
                           const count = membersInSlot.length;
                           const isNoShow = time === '미참석';
                           
-                          // 💡 [검사 로직] 미참석이 아니고, 1명 이상이며, "주말 전체 최고 득표수(weekMaxCount)"와 같을 때만 유력 표시!
+                          // 1위만 야광 표시 발동!
                           const isLikely = !isNoShow && count > 0 && count === weekMaxCount;
 
                           return (
