@@ -177,7 +177,7 @@ export default function Home() {
             
             <div className="space-y-3">
               {/* 1. 투표 제목 */}
-              <input type="text" placeholder="투표 제목 (예: 토요일 회식 여부, 야유회 장소 등)" value={newMatchTitle} onChange={(e) => setNewMatchTitle(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:ring-1 focus:ring-[#10b981]" />
+              <input type="text" placeholder="투표 제목" value={newMatchTitle} onChange={(e) => setNewMatchTitle(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:ring-1 focus:ring-[#10b981]" />
 
               {/* 2. 항목 추가 */}
               <div className="flex gap-2">
