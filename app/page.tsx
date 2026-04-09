@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Mail, Megaphone, Banknote, ChevronRight, Settings, Trophy, User, LogOut, BellRing, Edit3, Check, X, PlusCircle, Loader2, ListPlus, Trash2, FileText } from 'lucide-react';
+import { Mail, Megaphone, Banknote, ChevronRight, Settings, Trophy, User, LogOut, BellRing, Edit3, Check, X, PlusCircle, Loader2, ListPlus, Trash2, FileText, ShoppingBag, Coffee, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -16,11 +16,10 @@ export default function Home() {
   const [isEditingNotice, setIsEditingNotice] = useState(false);
   const [tempNotice, setTempNotice] = useState("");
   
-  // 💡 투표 생성 툴 (회식, 야유회 등 자유 항목 추가형)
-  const [newMatchTitle, setNewMatchTitle] = useState("");      // 투표 제목
-  const [selectedDates, setSelectedDates] = useState<string[]>([]); // 추가된 투표 항목들
-  const [itemInput, setItemInput] = useState("");              // 항목 입력 칸
-  const [matchContent, setMatchContent] = useState("");        // 상세 내용
+  const [newMatchTitle, setNewMatchTitle] = useState("");
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [itemInput, setItemInput] = useState("");
+  const [matchContent, setMatchContent] = useState("");
   const [isCreatingMatch, setIsCreatingMatch] = useState(false);
 
   useEffect(() => {
@@ -54,7 +53,6 @@ export default function Home() {
     init();
   }, [router]);
 
-  // 항목 추가 함수 (날짜 대신 텍스트로 자유롭게 추가)
   const addItem = () => {
     if (!itemInput) return;
     if (!selectedDates.includes(itemInput)) {
@@ -81,10 +79,6 @@ export default function Home() {
 
     try {
       await supabase.from('match_sessions').update({ is_active: false }).eq('is_active', true);
-
-      // 💡 생성 실패 원인 해결: content 컬럼이 없으면 에러가 나므로, 
-      // 만약 SQL 테이블에 content를 추가하지 않으셨다면 이 부분에서 에러가 날 수 있습니다.
-      // SQL에서 'alter table match_sessions add column if not exists content text;' 를 실행하셔야 완벽합니다.
       const { error: sessionError } = await supabase
         .from('match_sessions')
         .insert([{ 
@@ -106,7 +100,7 @@ export default function Home() {
       alert("새로운 투표가 게시되었습니다! ⚽");
     } catch (e) {
       console.error(e);
-      alert("생성 실패: 데이터베이스에 내용(content) 항목을 추가해주세요.");
+      alert("생성 실패: 데이터베이스 설정을 확인해주세요.");
     } finally {
       setIsCreatingMatch(false);
     }
@@ -167,43 +161,34 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 🛠️ [수정됨] 안내 문구는 안으로, 크기는 슬림하게 다이어트 성공 */}
+        {/* 관리자용 투표 생성기 */}
         {user?.role === 'admin' && (
           <section className="bg-slate-900 p-5 rounded-[2rem] shadow-xl relative border border-slate-800">
             <div className="flex items-center gap-2 mb-4">
               <div className="bg-[#10b981] p-1.5 rounded-lg"><PlusCircle className="w-4 h-4 text-white" /></div>
               <h3 className="text-white text-sm font-black italic tracking-tight uppercase">관리자용 투표 생성기</h3>
             </div>
-            
             <div className="space-y-3">
-              {/* 1. 투표 제목 */}
               <input type="text" placeholder="투표 제목" value={newMatchTitle} onChange={(e) => setNewMatchTitle(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs font-bold text-white outline-none focus:ring-1 focus:ring-[#10b981]" />
-
-              {/* 2. 항목 추가 */}
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center bg-white/5 rounded-xl px-3 border border-white/10">
                   <ListPlus className="w-4 h-4 text-slate-500 mr-2" />
-                  <input type="text" placeholder="선택 항목 추가 (참석, 불참, 장소 등)" value={itemInput} onChange={(e) => setItemInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addItem()} className="bg-transparent border-none py-3 text-xs font-bold text-white outline-none w-full" />
+                  <input type="text" placeholder="선택 항목 추가" value={itemInput} onChange={(e) => setItemInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addItem()} className="bg-transparent border-none py-3 text-xs font-bold text-white outline-none w-full" />
                 </div>
                 <button onClick={addItem} className="bg-white/10 text-white px-3 rounded-xl font-black text-xs hover:bg-white/20">추가</button>
               </div>
-
-              {/* 리스트 노출 (최소 높이 유지) */}
               <div className="flex flex-wrap gap-2 min-h-[28px]">
                 {selectedDates.map(item => (
-                  <div key={item} className="bg-[#10b981]/20 border border-[#10b981]/30 text-[#10b981] px-2.5 py-1.5 rounded-lg text-[10px] font-black flex items-center gap-1.5 animate-in zoom-in-95">
+                  <div key={item} className="bg-[#10b981]/20 border border-[#10b981]/30 text-[#10b981] px-2.5 py-1.5 rounded-lg text-[10px] font-black flex items-center gap-1.5">
                     {item}
                     <button onClick={() => removeItem(item)}><Trash2 size={12} /></button>
                   </div>
                 ))}
               </div>
-
-              {/* 3. 상세 내용 */}
               <div className="flex items-start bg-white/5 rounded-xl px-3 border border-white/10">
                 <FileText className="w-4 h-4 text-slate-500 mt-3 mr-2" />
-                <textarea placeholder="상세 설명 (장소 연락처, 준비물, 시간 등)" value={matchContent} onChange={(e) => setMatchContent(e.target.value)} className="bg-transparent border-none py-3 text-xs font-bold text-white outline-none w-full min-h-[60px]" />
+                <textarea placeholder="상세 설명" value={matchContent} onChange={(e) => setMatchContent(e.target.value)} className="bg-transparent border-none py-3 text-xs font-bold text-white outline-none w-full min-h-[60px]" />
               </div>
-              
               <button onClick={handleCreateNewMatch} disabled={isCreatingMatch} className="w-full bg-[#10b981] text-white py-3.5 rounded-xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2">
                 {isCreatingMatch ? <Loader2 className="animate-spin w-4 h-4" /> : "새 투표 게시판 만들기 ⚽"}
               </button>
@@ -211,7 +196,6 @@ export default function Home() {
           </section>
         )}
 
-        {/* 하단 메뉴 카드들 (기존 코드 100% 동일) */}
         <Link href="/vote" className="block active:scale-[0.97] transition-all">
           <section className="bg-[#1e293b] p-8 rounded-[2rem] shadow-xl relative overflow-hidden text-slate-100">
             <span className="absolute right-[-5%] bottom-[-10%] text-[100px] font-black text-white opacity-5 italic pointer-events-none">VOTE</span>
@@ -227,20 +211,50 @@ export default function Home() {
           </section>
         </Link>
 
+        {/* 🛠️ [디자인 수정] 포인트 SHOP 섹션만 심플하고 묵직하게 변경 */}
         <div className="grid gap-4">
           {[
             { title: "투표 현황 확인", sub: "누가 나오는지 확인하세요 📊", icon: <Mail className="text-[#2d6cef]" />, href: "/status" },
-            { title: "포인트 랭킹", sub: "활동 포인트 확인하기 🏆", icon: <Trophy className="text-amber-500" />, href: "/points", bg: "bg-amber-50" },
+            { 
+              title: "포인트 SHOP", 
+              sub: "후원중인 커피 받아가기 ☕", 
+              icon: <Coffee className="text-amber-500" />, // 아이콘 색상만 포인트
+              href: "/points", 
+              isSpecial: true // 💡 여전히 특수 처리
+            },
             { title: "팀 회계 장부", sub: "투명한 회비 정산 내역 💰", icon: <Banknote className="text-emerald-500" />, href: "/accounting" },
             { title: "설정 및 명단관리", sub: "멤버 관리 및 권한 설정 ⚙️", icon: <Settings className="text-slate-400" />, href: "/setting" }
           ].map((item, idx) => (
             <Link key={idx} href={item.href} className="block active:scale-[0.97] transition-all">
-              <section className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-50 flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-black tracking-tight text-[#1e293b]">{item.title}</h2>
-                  <p className="text-sm text-slate-400 font-medium">{item.sub}</p>
+              <section className={`relative overflow-hidden p-6 rounded-[2.5rem] shadow-sm border flex justify-between items-center transition-all ${
+                item.isSpecial 
+                ? "bg-[#1e293b] border-slate-700 text-white" // 💡 유치한 노란색 삭제, 고급스러운 딥 네이비톤
+                : "bg-white border-slate-50 text-[#1e293b]"
+              }`}>
+                
+                <div className="relative z-10">
+                  <h2 className={`text-2xl font-black tracking-tighter italic ${item.isSpecial ? "text-amber-400" : "text-[#1e293b]"}`}>
+                    {item.title}
+                  </h2>
+                  <p className={`text-sm font-bold ${item.isSpecial ? "text-slate-400" : "text-slate-400"}`}>
+                    {item.sub}
+                  </p>
                 </div>
-                <div className={`w-14 h-14 flex items-center justify-center rounded-3xl ${item.bg || 'bg-slate-50'}`}>{item.icon}</div>
+
+                <div className={`w-14 h-14 flex items-center justify-center rounded-[1.5rem] relative z-10 shadow-sm ${
+                  item.isSpecial 
+                  ? 'bg-slate-800 border border-slate-700' 
+                  : 'bg-slate-50'
+                }`}>
+                  {item.icon}
+                </div>
+                
+                {/* 💡 배경 커피 아이콘: 크기를 줄이고 투명도를 확 낮춰서 은은하게만 표시 */}
+                {item.isSpecial && (
+                  <div className="absolute right-[-5px] bottom-[-10px] opacity-[0.03] -rotate-12 pointer-events-none">
+                    <Coffee size={100} />
+                  </div>
+                )}
               </section>
             </Link>
           ))}

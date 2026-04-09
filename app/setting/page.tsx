@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, UserPlus, Trash2, Settings2, ShieldCheck, Key, User } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronLeft, UserPlus, Trash2, Settings2, ShieldCheck, Key, User, ShieldAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
-// DB에서 가져올 멤버 데이터 타입
 interface Member {
   id: string;
   name: string;
@@ -22,10 +21,10 @@ export default function SettingPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [myId, setMyId] = useState("");
 
   useEffect(() => {
     async function initSettings() {
-      // 1. 관리자 권한 체크
       const savedUser = localStorage.getItem('insam_user');
       if (!savedUser) {
         router.replace('/login');
@@ -33,13 +32,14 @@ export default function SettingPage() {
       }
 
       const userData = JSON.parse(savedUser);
+      setMyId(userData.id);
+
       if (userData.role !== 'admin') {
         alert("관리자만 접근 가능한 페이지입니다.");
         router.replace('/');
         return;
       }
 
-      // 2. DB에서 진짜 멤버 명단 가져오기
       const { data, error } = await supabase
         .from('members')
         .select('*')
@@ -56,8 +56,39 @@ export default function SettingPage() {
     initSettings();
   }, [router]);
 
-  // 회원 삭제 함수 (실제로 작동하게 하려면 추가 로직 필요)
+  // 💡 권한 변경 함수 (관리자 <-> 일반 유저)
+  const toggleAdminRole = async (memberId: string, currentRole: string, name: string) => {
+    // 본인 권한을 스스로 해제하는 것 방지
+    if (memberId === myId) {
+      alert("본인의 관리자 권한은 스스로 해제할 수 없습니다.");
+      return;
+    }
+
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    const confirmMsg = newRole === 'admin' 
+      ? `[${name}] 님에게 관리자 권한을 부여하시겠습니까?` 
+      : `[${name}] 님의 관리자 권한을 해제하시겠습니까?`;
+
+    if (confirm(confirmMsg)) {
+      const { error } = await supabase
+        .from('members')
+        .update({ role: newRole })
+        .eq('id', memberId);
+
+      if (!error) {
+        setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+        alert("권한이 정상적으로 변경되었습니다.");
+      } else {
+        alert("권한 변경 중 오류 발생");
+      }
+    }
+  };
+
   const handleDelete = async (id: string, name: string) => {
+    if (id === myId) {
+      alert("본인 계정은 삭제할 수 없습니다.");
+      return;
+    }
     if (confirm(`${name} 멤버를 삭제하시겠습니까?`)) {
       const { error } = await supabase.from('members').delete().eq('id', id);
       if (!error) {
@@ -76,7 +107,6 @@ export default function SettingPage() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans pb-20">
-      {/* 1. 상단 헤더 */}
       <header className="sticky top-0 z-50 bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between shadow-sm">
         <Link href="/" className="flex items-center gap-1 -ml-1 p-2 active:scale-90 transition-all">
           <ChevronLeft className="w-6 h-6 text-slate-800" />
@@ -89,8 +119,7 @@ export default function SettingPage() {
       </header>
 
       <main className="max-w-md mx-auto p-4 space-y-6">
-        {/* 2. 관리 대시보드 요약 */}
-        <section className="bg-[#1e293b] p-6 rounded-[2rem] shadow-xl text-white relative overflow-hidden">
+        <section className="bg-[#1e293b] p-6 rounded-[2rem] shadow-xl text-white relative overflow-hidden border-b-8 border-slate-800">
           <div className="relative z-10 flex justify-between items-center">
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Security Level: Admin</p>
@@ -104,7 +133,6 @@ export default function SettingPage() {
           <ShieldCheck className="absolute right-[-10px] bottom-[-10px] w-24 h-24 text-white/5 -rotate-12" />
         </section>
 
-        {/* 3. 회원 추가 버튼 영역 */}
         <div className="px-1 flex justify-between items-center">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
             <Settings2 className="w-3.5 h-3.5" /> 3열 그리드 명단 (ID/PW)
@@ -114,45 +142,57 @@ export default function SettingPage() {
           </button>
         </div>
 
-        {/* 4. ⭐ 진짜 데이터가 들어가는 3열 그리드 */}
         <section className="grid grid-cols-3 gap-3">
           {members.map((member, idx) => (
             <div 
               key={member.id} 
-              className="relative bg-slate-50 rounded-2xl border border-slate-100 p-3 flex flex-col items-center justify-center group active:scale-95 transition-all min-h-[120px]"
+              className={`relative rounded-2xl border p-3 flex flex-col items-center justify-center transition-all min-h-[130px] ${
+                member.role === 'admin' ? 'bg-blue-50 border-blue-100 shadow-sm' : 'bg-slate-50 border-slate-100'
+              }`}
             >
-              {/* 삭제 버튼 (상단 우측) */}
+              {/* 삭제 버튼 */}
               <button 
                 onClick={() => handleDelete(member.id, member.name)}
-                className="absolute top-2 right-2 text-slate-200 hover:text-red-500 transition-colors"
+                className="absolute top-2 right-2 text-slate-300 hover:text-red-500 transition-colors"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
               
-              {/* 번호 표시 */}
-              <div className="absolute top-2 left-2">
-                <span className="text-[8px] font-black text-slate-300">{idx + 1}</span>
-              </div>
+              {/* 💡 관리자 부여/해제 버튼 (방패 아이콘) */}
+              <button 
+                onClick={() => toggleAdminRole(member.id, member.role, member.name)}
+                className={`absolute top-2 left-2 transition-all active:scale-90 ${
+                  member.role === 'admin' ? 'text-[#2d6cef]' : 'text-slate-200'
+                }`}
+              >
+                {member.role === 'admin' ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+              </button>
               
               {/* 이름 (실명) */}
-              <span className="text-sm font-black text-slate-800 tracking-tighter mb-2 mt-2">
+              <span className={`text-sm font-black tracking-tighter mb-2 mt-4 ${
+                member.role === 'admin' ? 'text-[#2d6cef]' : 'text-slate-800'
+              }`}>
                 {member.name}
               </span>
 
-              {/* ID / PW 정보 (작게 표시) */}
-              <div className="w-full space-y-1 mt-1 border-t border-slate-100 pt-2">
+              {/* ID / PW 정보 */}
+              <div className="w-full space-y-1 mt-1 border-t border-slate-100 pt-2 opacity-60">
                 <div className="flex items-center gap-1 justify-center">
                   <User className="w-2 h-2 text-slate-400" />
-                  <span className="text-[9px] font-bold text-slate-500 truncate max-w-[50px]">{member.login_id || 'N/A'}</span>
+                  <span className="text-[8px] font-bold text-slate-500 truncate max-w-[50px]">{member.login_id}</span>
                 </div>
                 <div className="flex items-center gap-1 justify-center">
                   <Key className="w-2 h-2 text-amber-400" />
-                  <span className="text-[9px] font-bold text-slate-400">{member.password || '****'}</span>
+                  <span className="text-[8px] font-bold text-slate-400">{member.password}</span>
                 </div>
               </div>
 
-              {/* 로그인 권한 상태 표시 점 */}
-              <div className={`absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full ${member.can_login ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+              {/* 관리자 뱃지 표시 */}
+              {member.role === 'admin' && (
+                <div className="absolute -top-1 -right-1">
+                   <div className="bg-[#2d6cef] text-white text-[6px] font-black px-1.5 py-0.5 rounded-full uppercase shadow-sm">Admin</div>
+                </div>
+              )}
             </div>
           ))}
         </section>
