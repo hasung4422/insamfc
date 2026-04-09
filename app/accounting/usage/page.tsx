@@ -1,55 +1,45 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, TrendingUp, TrendingDown, Search } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Circle } from 'lucide-react';
 import Link from 'next/link';
 
-export default function UsagePage() {
+export default function StatusPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // 가짜 데이터 (나중에 DB 연결)
-  const transactions = [
-    { id: 1, date: "04.09", title: "A구장 대관료", category: "구장료", amount: -120000, balance: 450000 },
-    { id: 2, date: "04.08", title: "4월 정기 회비 (20명)", category: "회비", amount: 600000, balance: 570000 },
-    { id: 3, date: "04.05", title: "음료수 및 생수", category: "부식비", amount: -25000, balance: -30000 },
+  // 💡 이름을 1부터 9까지의 숫자로 변경
+  const members = [
+    { name: "1", paid: true }, { name: "2", paid: true }, { name: "3", paid: false },
+    { name: "4", paid: true }, { name: "5", paid: false }, { name: "6", paid: true },
+    { name: "7", paid: true }, { name: "8", paid: true }, { name: "9", paid: false },
   ];
 
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans pb-10">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-10">
       <header className="sticky top-0 z-50 bg-white border-b border-slate-100 px-6 py-4 flex items-center gap-4">
         <Link href="/accounting"><ChevronLeft className="w-6 h-6" /></Link>
-        <h1 className="text-xl font-black italic tracking-tighter uppercase text-[#1e293b]">Usage <span className="text-[#2d6cef]">History</span></h1>
+        <h1 className="text-xl font-black italic tracking-tighter uppercase text-[#1e293b]">Payment <span className="text-[#2d6cef]">Status</span></h1>
       </header>
 
-      <main className="max-w-md mx-auto p-4 space-y-4">
-        {/* 검색바 */}
-        <div className="bg-slate-50 rounded-2xl px-4 py-3 flex items-center gap-2">
-          <Search size={18} className="text-slate-400" />
-          <input type="text" placeholder="사용 내역 검색..." className="bg-transparent border-none text-sm font-bold w-full focus:ring-0" />
+      <main className="max-w-md mx-auto p-4 space-y-6">
+        <div className="bg-[#1e293b] p-6 rounded-[2rem] text-white flex justify-between items-center">
+          <div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">4월 정기 회비</p>
+            <h2 className="text-xl font-black italic">16 / 20 <span className="text-sm font-bold text-slate-400 not-italic">명 납부</span></h2>
+          </div>
+          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-[#10b981]"><CheckCircle2 size={24} /></div>
         </div>
 
-        {/* 내역 리스트 */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-          {transactions.map((item) => (
-            <div key={item.id} className="p-5 border-b border-slate-50 last:border-none flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${item.amount > 0 ? 'bg-blue-50 text-blue-500' : 'bg-red-50 text-red-500'}`}>
-                  {item.amount > 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-300 uppercase leading-none mb-1">{item.date} · {item.category}</p>
-                  <p className="text-sm font-black text-slate-800 tracking-tight">{item.title}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className={`text-base font-black ${item.amount > 0 ? 'text-blue-600' : 'text-slate-900'}`}>
-                  {item.amount > 0 ? `+${item.amount.toLocaleString()}` : item.amount.toLocaleString()}원
-                </p>
-                <p className="text-[10px] font-bold text-slate-300">잔액 {item.balance.toLocaleString()}원</p>
-              </div>
+        <div className="grid grid-cols-3 gap-3">
+          {members.map((m, i) => (
+            <div key={i} className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 ${m.paid ? 'bg-white border-slate-100' : 'bg-red-50 border-red-100'}`}>
+              <span className={`text-[10px] font-black ${m.paid ? 'text-[#10b981]' : 'text-red-400'}`}>
+                {m.paid ? "완료" : "미납"}
+              </span>
+              <span className="text-sm font-black text-slate-800">{m.name}</span>
             </div>
           ))}
         </div>

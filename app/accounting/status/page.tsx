@@ -8,10 +8,11 @@ export default function StatusPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
+  // 💡 이름을 1부터 9까지 숫자로 변경
   const members = [
-    { name: "김인삼", paid: true }, { name: "이축구", paid: true }, { name: "박민수", paid: false },
-    { name: "최철수", paid: true }, { name: "정대만", paid: false }, { name: "강백호", paid: true },
-    { name: "서태웅", paid: true }, { name: "송태섭", paid: true }, { name: "채치수", paid: false },
+    { name: "1", paid: true }, { name: "2", paid: true }, { name: "3", paid: false },
+    { name: "4", paid: true }, { name: "5", paid: false }, { name: "6", paid: true },
+    { name: "7", paid: true }, { name: "8", paid: true }, { name: "9", paid: false },
   ];
 
   if (!mounted) return null;
