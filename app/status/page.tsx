@@ -77,7 +77,6 @@ export default function StatusPage() {
             </div>
 
             <div className="grid gap-3 px-1">
-              {/* 💡 기존 옵션들에 '미참석' 강제 추가해서 렌더링 */}
               {[...adminSession.match_date?.split(',').map((option: string) => option.trim()).filter(Boolean), '미참석'].map((option: string, idx: number) => {
                 const membersInOption = voteData
                   .filter(v => v.session_id === adminSession.id && v.match_date === option)
@@ -85,7 +84,7 @@ export default function StatusPage() {
                   .filter(Boolean);
                 
                 const count = membersInOption.length;
-                const isNoShow = option === '미참석'; // 미참석 항목인지 체크
+                const isNoShow = option === '미참석';
 
                 return (
                   <div key={idx} className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden ${isNoShow ? 'border-red-100' : 'border-blue-50'}`}>
@@ -98,7 +97,6 @@ export default function StatusPage() {
                         </div>
                       </div>
                       
-                      {/* 명단 리스트 */}
                       <div className="flex flex-wrap gap-1.5">
                         {membersInOption.length > 0 ? (
                           membersInOption.map((name, nIdx) => (
@@ -120,85 +118,125 @@ export default function StatusPage() {
         )}
 
         {/* 📅 기존 4주차 현황 (원본 그대로 유지) */}
-        {FIXED_DATES.map((week, wIdx) => (
-          <div key={wIdx} className="space-y-4">
-            <div className="bg-[#1e293b] text-white py-2 px-4 rounded-xl shadow-sm flex justify-between items-center">
-              <h2 className="text-base font-black tracking-tight">{week.weekTitle}</h2>
-              <TrendingUp className="w-4 h-4 text-[#10b981]" />
-            </div>
+        {FIXED_DATES.map((week, wIdx) => {
+          // 💡 [핵심 변경] "이번 주말(토, 일)" 전체를 통틀어서 가장 높은 득표수를 여기서 미리 구합니다!
+          const weekMaxCount = Math.max(
+            0,
+            ...week.days.flatMap(day => 
+              TIMES.map(time => 
+                voteData.filter(v => !v.session_id && v.match_date === day.date && v.match_time === time).length
+              )
+            )
+          );
 
-            <div className="space-y-8">
-              {week.days.map((day, dIdx) => {
-                // 기존 투표(session_id가 없는 것들)만 필터링
-                const dayVotes = voteData.filter(v => !v.session_id && v.match_date === day.date);
-                
-                return (
-                  <div key={dIdx} className="space-y-3 px-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-black px-2 py-0.5 rounded-md ${day.isSat ? 'bg-blue-600' : 'bg-red-600'} text-white shadow-sm`}>
-                        {day.isSat ? '토요일' : '일요일'}
-                      </span>
-                      <span className="text-base font-black text-slate-800">{day.date}</span>
-                    </div>
+          return (
+            <div key={wIdx} className="space-y-4">
+              <div className="bg-[#1e293b] text-white py-2 px-4 rounded-xl shadow-sm flex justify-between items-center">
+                <h2 className="text-base font-black tracking-tight">{week.weekTitle}</h2>
+                <TrendingUp className="w-4 h-4 text-[#10b981]" />
+              </div>
 
-                    <div className="grid gap-3">
-                      {/* 💡 기존 시간표 배열(TIMES) 맨 뒤에 '미참석'을 추가해서 화면에 뿌림 */}
-                      {[...TIMES, '미참석'].map((time, sIdx) => {
-                        const membersInSlot = dayVotes
-                          .filter(v => v.match_time === time) // 여기서 '미참석' 글자도 알아서 필터링 됨
-                          .map(v => v.members?.name)
-                          .filter(Boolean);
-                        
-                        const count = membersInSlot.length;
-                        const isNoShow = time === '미참석';
-                        const isLikely = !isNoShow && count >= 10; // 미참석은 인원이 많아도 '유력' 뱃지가 안 뜨게 함
+              <div className="space-y-8">
+                {week.days.map((day, dIdx) => {
+                  const dayVotes = voteData.filter(v => !v.session_id && v.match_date === day.date);
+                  
+                  return (
+                    <div key={dIdx} className="space-y-3 px-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-black px-2 py-0.5 rounded-md ${day.isSat ? 'bg-blue-600' : 'bg-red-600'} text-white shadow-sm`}>
+                          {day.isSat ? '토요일' : '일요일'}
+                        </span>
+                        <span className="text-base font-black text-slate-800">{day.date}</span>
+                      </div>
 
-                        return (
-                          <div key={sIdx} className={`bg-white rounded-2xl border-2 transition-all ${isLikely ? 'border-[#1e293b] shadow-md' : isNoShow ? 'border-red-100 shadow-sm' : 'border-slate-100 shadow-sm'}`}>
-                            <div className="p-4">
-                              <div className="flex justify-between items-center mb-3">
-                                <div className="flex items-center gap-2">
-                                  <Clock className={`w-4 h-4 ${isLikely ? 'text-[#2d6cef]' : isNoShow ? 'text-red-400' : 'text-slate-300'}`} />
-                                  <span className={`text-sm font-black ${isLikely ? 'text-[#1e293b]' : isNoShow ? 'text-red-500' : 'text-slate-500'}`}>{time}</span>
-                                  {isLikely && (
-                                    <span className="bg-[#10b981] text-white text-[9px] px-2 py-0.5 rounded-full font-black flex items-center gap-1">
-                                      <Trophy className="w-2.5 h-2.5" /> 유력
-                                    </span>
+                      <div className="grid gap-3">
+                        {[...TIMES, '미참석'].map((time, sIdx) => {
+                          const membersInSlot = dayVotes
+                            .filter(v => v.match_time === time)
+                            .map(v => v.members?.name)
+                            .filter(Boolean);
+                          
+                          const count = membersInSlot.length;
+                          const isNoShow = time === '미참석';
+                          
+                          // 💡 [검사 로직] 미참석이 아니고, 1명 이상이며, "주말 전체 최고 득표수(weekMaxCount)"와 같을 때만 유력 표시!
+                          const isLikely = !isNoShow && count > 0 && count === weekMaxCount;
+
+                          return (
+                            <div 
+                              key={sIdx} 
+                              className={`rounded-2xl border-2 transition-all duration-300 relative overflow-hidden ${
+                                isLikely 
+                                  ? 'bg-gradient-to-br from-[#0f172a] to-[#1e293b] border-blue-500/50 shadow-xl shadow-blue-900/20 scale-[1.02] z-10' 
+                                  : isNoShow 
+                                    ? 'bg-white border-red-100 shadow-sm' 
+                                    : 'bg-white border-slate-100 shadow-sm'
+                              }`}
+                            >
+                              {isLikely && <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 blur-3xl rounded-full pointer-events-none"></div>}
+
+                              <div className="p-4 relative z-10">
+                                <div className="flex justify-between items-center mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <Clock className={`w-4 h-4 ${isLikely ? 'text-blue-400' : isNoShow ? 'text-red-400' : 'text-slate-300'}`} />
+                                    <span className={`text-sm font-black ${isLikely ? 'text-white' : isNoShow ? 'text-red-500' : 'text-slate-500'}`}>{time}</span>
+                                    {isLikely && (
+                                      <span className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-[10px] px-2.5 py-0.5 rounded-full font-black flex items-center gap-1 shadow-md animate-pulse border border-blue-400/30">
+                                        <Trophy className="w-3 h-3" /> 매치유력
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-baseline gap-0.5">
+                                    <span className={`text-xl font-black ${isLikely ? 'text-white' : isNoShow ? 'text-red-500' : 'text-slate-800'}`}>{count}</span>
+                                    <span className={`text-xs font-bold uppercase ${isLikely ? 'text-blue-300' : 'text-slate-400'}`}>명</span>
+                                  </div>
+                                </div>
+
+                                <div className={`w-full h-2 rounded-full overflow-hidden mb-4 ${isLikely ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
+                                  <div 
+                                    className={`h-full rounded-full transition-all duration-1000 ${
+                                      isLikely 
+                                        ? 'bg-gradient-to-r from-blue-400 to-indigo-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]' 
+                                        : isNoShow 
+                                          ? 'bg-red-400 opacity-60' 
+                                          : 'bg-[#2d6cef] opacity-40'
+                                    }`}
+                                    style={{ width: `${Math.min(100, (count / 20) * 100)}%` }}
+                                  />
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                  {membersInSlot.length > 0 ? (
+                                    membersInSlot.map((name, nIdx) => (
+                                      <span 
+                                        key={nIdx} 
+                                        className={`text-xs font-bold px-3 py-1.5 rounded-lg border shadow-sm transition-all ${
+                                          isLikely 
+                                            ? 'bg-white/10 text-white border-white/20 backdrop-blur-md' 
+                                            : isNoShow 
+                                              ? 'bg-red-50 text-red-600 border-red-100' 
+                                              : 'bg-slate-50 text-slate-800 border-slate-200'
+                                        }`}
+                                      >
+                                        {name}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className={`text-xs italic ${isLikely ? 'text-slate-400' : 'text-slate-300'}`}>참가자 없음</span>
                                   )}
                                 </div>
-                                <div className="flex items-baseline gap-0.5">
-                                  <span className={`text-xl font-black ${isLikely ? 'text-[#2d6cef]' : isNoShow ? 'text-red-500' : 'text-slate-800'}`}>{count}</span>
-                                  <span className="text-xs font-bold text-slate-400 uppercase">명</span>
-                                </div>
-                              </div>
-                              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
-                                <div 
-                                  className={`h-full rounded-full transition-all duration-1000 ${isLikely ? 'bg-[#1e293b]' : isNoShow ? 'bg-red-400 opacity-60' : 'bg-[#2d6cef] opacity-40'}`}
-                                  style={{ width: `${Math.min(100, (count / 20) * 100)}%` }}
-                                />
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {membersInSlot.length > 0 ? (
-                                  membersInSlot.map((name, nIdx) => (
-                                    <span key={nIdx} className={`text-xs font-bold px-3 py-1.5 rounded-lg border shadow-sm ${isNoShow ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-800 border-slate-200'}`}>
-                                      {name}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-xs text-slate-300 italic">참가자 없음</span>
-                                )}
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </main>
     </div>
   );
