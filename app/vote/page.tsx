@@ -69,7 +69,7 @@ export default function VotePage() {
         const regMap: Record<string, boolean> = {};
         const admMap: Record<string, boolean> = {};
         
-        myVotes.forEach(v => {
+        myVotes.forEach((v: any) => {
           // 관리자 투표에 한 것이라면
           if (sessionData && v.session_id === sessionData.id) {
             admMap[v.match_date] = true; 
