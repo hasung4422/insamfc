@@ -77,22 +77,23 @@ export default function StatusPage() {
             </div>
 
             <div className="grid gap-3 px-1">
-              {/* 회장님이 추가한 항목(콤마로 구분된 값)별로 현황 집계 */}
-              {adminSession.match_date?.split(',').map((option: string) => option.trim()).map((option: string, idx: number) => {
+              {/* 💡 기존 옵션들에 '미참석' 강제 추가해서 렌더링 */}
+              {[...adminSession.match_date?.split(',').map((option: string) => option.trim()).filter(Boolean), '미참석'].map((option: string, idx: number) => {
                 const membersInOption = voteData
                   .filter(v => v.session_id === adminSession.id && v.match_date === option)
                   .map(v => v.members?.name)
                   .filter(Boolean);
                 
                 const count = membersInOption.length;
+                const isNoShow = option === '미참석'; // 미참석 항목인지 체크
 
                 return (
-                  <div key={idx} className="bg-white rounded-2xl border-2 border-blue-50 shadow-sm overflow-hidden">
+                  <div key={idx} className={`bg-white rounded-2xl border-2 shadow-sm overflow-hidden ${isNoShow ? 'border-red-100' : 'border-blue-50'}`}>
                     <div className="p-4">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm font-black text-slate-700">{option}</span>
+                        <span className={`text-sm font-black ${isNoShow ? 'text-red-500' : 'text-slate-700'}`}>{option}</span>
                         <div className="flex items-baseline gap-0.5">
-                          <span className="text-xl font-black text-[#2d6cef]">{count}</span>
+                          <span className={`text-xl font-black ${isNoShow ? 'text-red-500' : 'text-[#2d6cef]'}`}>{count}</span>
                           <span className="text-[10px] font-bold text-slate-400">명</span>
                         </div>
                       </div>
@@ -101,7 +102,7 @@ export default function StatusPage() {
                       <div className="flex flex-wrap gap-1.5">
                         {membersInOption.length > 0 ? (
                           membersInOption.map((name, nIdx) => (
-                            <span key={nIdx} className="bg-blue-50 text-[#2d6cef] text-[11px] font-bold px-3 py-1.5 rounded-lg border border-blue-100">
+                            <span key={nIdx} className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border ${isNoShow ? 'bg-red-50 text-red-500 border-red-100' : 'bg-blue-50 text-[#2d6cef] border-blue-100'}`}>
                               {name}
                             </span>
                           ))
@@ -141,22 +142,24 @@ export default function StatusPage() {
                     </div>
 
                     <div className="grid gap-3">
-                      {TIMES.map((time, sIdx) => {
+                      {/* 💡 기존 시간표 배열(TIMES) 맨 뒤에 '미참석'을 추가해서 화면에 뿌림 */}
+                      {[...TIMES, '미참석'].map((time, sIdx) => {
                         const membersInSlot = dayVotes
-                          .filter(v => v.match_time === time)
+                          .filter(v => v.match_time === time) // 여기서 '미참석' 글자도 알아서 필터링 됨
                           .map(v => v.members?.name)
                           .filter(Boolean);
                         
                         const count = membersInSlot.length;
-                        const isLikely = count >= 10;
+                        const isNoShow = time === '미참석';
+                        const isLikely = !isNoShow && count >= 10; // 미참석은 인원이 많아도 '유력' 뱃지가 안 뜨게 함
 
                         return (
-                          <div key={sIdx} className={`bg-white rounded-2xl border-2 transition-all ${isLikely ? 'border-[#1e293b] shadow-md' : 'border-slate-100 shadow-sm'}`}>
+                          <div key={sIdx} className={`bg-white rounded-2xl border-2 transition-all ${isLikely ? 'border-[#1e293b] shadow-md' : isNoShow ? 'border-red-100 shadow-sm' : 'border-slate-100 shadow-sm'}`}>
                             <div className="p-4">
                               <div className="flex justify-between items-center mb-3">
                                 <div className="flex items-center gap-2">
-                                  <Clock className={`w-4 h-4 ${isLikely ? 'text-[#2d6cef]' : 'text-slate-300'}`} />
-                                  <span className={`text-sm font-black ${isLikely ? 'text-[#1e293b]' : 'text-slate-500'}`}>{time}</span>
+                                  <Clock className={`w-4 h-4 ${isLikely ? 'text-[#2d6cef]' : isNoShow ? 'text-red-400' : 'text-slate-300'}`} />
+                                  <span className={`text-sm font-black ${isLikely ? 'text-[#1e293b]' : isNoShow ? 'text-red-500' : 'text-slate-500'}`}>{time}</span>
                                   {isLikely && (
                                     <span className="bg-[#10b981] text-white text-[9px] px-2 py-0.5 rounded-full font-black flex items-center gap-1">
                                       <Trophy className="w-2.5 h-2.5" /> 유력
@@ -164,20 +167,22 @@ export default function StatusPage() {
                                   )}
                                 </div>
                                 <div className="flex items-baseline gap-0.5">
-                                  <span className={`text-xl font-black ${isLikely ? 'text-[#2d6cef]' : 'text-slate-800'}`}>{count}</span>
+                                  <span className={`text-xl font-black ${isLikely ? 'text-[#2d6cef]' : isNoShow ? 'text-red-500' : 'text-slate-800'}`}>{count}</span>
                                   <span className="text-xs font-bold text-slate-400 uppercase">명</span>
                                 </div>
                               </div>
                               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-4">
                                 <div 
-                                  className={`h-full rounded-full transition-all duration-1000 ${isLikely ? 'bg-[#1e293b]' : 'bg-[#2d6cef] opacity-40'}`}
+                                  className={`h-full rounded-full transition-all duration-1000 ${isLikely ? 'bg-[#1e293b]' : isNoShow ? 'bg-red-400 opacity-60' : 'bg-[#2d6cef] opacity-40'}`}
                                   style={{ width: `${Math.min(100, (count / 20) * 100)}%` }}
                                 />
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {membersInSlot.length > 0 ? (
                                   membersInSlot.map((name, nIdx) => (
-                                    <span key={nIdx} className="bg-slate-50 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">{name}</span>
+                                    <span key={nIdx} className={`text-xs font-bold px-3 py-1.5 rounded-lg border shadow-sm ${isNoShow ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-50 text-slate-800 border-slate-200'}`}>
+                                      {name}
+                                    </span>
                                   ))
                                 ) : (
                                   <span className="text-xs text-slate-300 italic">참가자 없음</span>

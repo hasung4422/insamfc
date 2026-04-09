@@ -86,11 +86,22 @@ export default function VotePage() {
     initVotePage();
   }, [router]);
 
-  // 💡 투표 토글 (기존 일정용)
+  // 💡 투표 토글 (기존 일정용 - 미참석 배타적 선택 기능 적용)
   const handleToggle = (date: string, slot: string) => {
     if (!isEditing) return;
-    const key = `${date}||${slot}`;
-    setVotes(prev => ({ ...prev, [key]: !prev[key] }));
+    setVotes(prev => {
+      const newState = { ...prev };
+      if (slot === '미참석') {
+        // 미참석을 누르면 해당 날짜의 다른 시간대들 모두 취소
+        timeSlots.forEach(t => newState[`${date}||${t}`] = false);
+        newState[`${date}||미참석`] = !prev[`${date}||미참석`];
+      } else {
+        // 시간대를 누르면 해당 날짜의 미참석 취소
+        newState[`${date}||미참석`] = false;
+        newState[`${date}||${slot}`] = !prev[`${date}||${slot}`];
+      }
+      return newState;
+    });
   };
 
   // 💡 투표 토글 (관리자 특별 투표용)
@@ -251,8 +262,11 @@ export default function VotePage() {
                 </h3>
 
                 <div className="grid gap-2">
-                  {timeSlots.map((slot) => {
+                  {/* 💡 여기에 "미참석"을 강제로 추가해서 매 날짜마다 렌더링되게 함 */}
+                  {[...timeSlots, '미참석'].map((slot) => {
                     const isSelected = votes[`${day.date}||${slot}`]; // 안전한 키값 || 사용
+                    const isNoShow = slot === '미참석';
+                    
                     return (
                       <button
                         key={slot}
@@ -260,15 +274,15 @@ export default function VotePage() {
                         disabled={!isEditing || loading}
                         className={`
                           relative overflow-hidden rounded-xl py-3.5 px-4 text-left transition-all duration-200 border-2
-                          ${isSelected ? 'bg-[#1e293b] border-[#2d6cef] shadow-md' : 'bg-white border-slate-100 shadow-sm'}
+                          ${isSelected ? (isNoShow ? 'bg-red-50 border-red-500 shadow-md' : 'bg-[#1e293b] border-[#2d6cef] shadow-md') : 'bg-white border-slate-100 shadow-sm'}
                           ${!isEditing && 'opacity-80 cursor-default'}
                         `}
                       >
                         <div className="flex justify-between items-center relative z-10">
                           <div className="flex items-center gap-3">
-                            <Clock className={`w-4 h-4 ${isSelected ? 'text-[#2d6cef]' : 'text-slate-300'}`} />
+                            <Clock className={`w-4 h-4 ${isSelected ? (isNoShow ? 'text-red-500' : 'text-[#2d6cef]') : 'text-slate-300'}`} />
                             <div>
-                              <p className={`text-base font-bold tracking-tight ${isSelected ? 'text-white' : 'text-slate-700'}`}>
+                              <p className={`text-base font-bold tracking-tight ${isSelected ? (isNoShow ? 'text-red-600' : 'text-white') : 'text-slate-700'}`}>
                                 {slot}
                               </p>
                             </div>
@@ -276,7 +290,7 @@ export default function VotePage() {
                           
                           <div className={`
                             w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300
-                            ${isSelected ? 'bg-[#2d6cef] border-[#2d6cef]' : 'bg-transparent border-slate-200'}
+                            ${isSelected ? (isNoShow ? 'bg-red-500 border-red-500' : 'bg-[#2d6cef] border-[#2d6cef]') : 'bg-transparent border-slate-200'}
                           `}>
                             {isSelected && <Check className="w-4 h-4 text-white" strokeWidth={4} />}
                           </div>
