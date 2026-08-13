@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Mail, Megaphone, Banknote, ChevronRight, Settings, Trophy, User, LogOut, BellRing, Edit3, Check, X, PlusCircle, Loader2, ListPlus, Trash2, FileText } from 'lucide-react';
+import { CheckSquare, Users, Wallet, SlidersHorizontal, LogOut, BellRing, Edit3, PlusCircle, Loader2, ListPlus, Trash2, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -163,10 +163,10 @@ export default function Home() {
         {/* 4개 탭 모두 동일한 크기(2열 그리드: 0 0 / 0 0)로 배치 */}
         <div className="grid grid-cols-2 gap-4">
           {[
-            { title: "투표하기", icon: <Trophy size={30} className="text-[#10b981]" />, href: "/vote" },
-            { title: "투표 현황 확인", icon: <Mail size={30} className="text-[#2d6cef]" />, href: "/status" },
-            { title: "팀 회계 장부", icon: <Banknote size={30} className="text-emerald-500" />, href: "/accounting" },
-            { title: "설정 및 명단관리", icon: <Settings size={30} className="text-slate-400" />, href: "/setting" }
+            { title: "투표하기", icon: <CheckSquare size={30} className="text-[#10b981]" />, href: "/vote" },
+            { title: "투표 현황 확인", icon: <Users size={30} className="text-[#2d6cef]" />, href: "/status" },
+            { title: "팀 회계 장부", icon: <Wallet size={30} className="text-emerald-500" />, href: "/accounting" },
+            { title: "설정 및 명단관리", icon: <SlidersHorizontal size={30} className="text-slate-400" />, href: "/setting" }
           ].map((item, idx) => (
             <Link key={idx} href={item.href} className="block active:scale-[0.97] transition-all">
               <section className="relative overflow-hidden p-5 rounded-[2.2rem] shadow-sm border flex flex-col items-center justify-center text-center h-full transition-all bg-white border-slate-100 text-[#1e293b]">
