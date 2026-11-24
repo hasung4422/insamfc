@@ -28,7 +28,7 @@ export default function StatusPage() {
       const weeks = [];
       const today = new Date();
       const firstSat = new Date(today);
-      firstSat.setDate(today.getDate() + (6 - today.getDay() + 7) % 7);
+      firstSat.setDate(today.getDate() + (today.getDay() === 0 ? -1 : 6 - today.getDay()));
       
       for (let i = 0; i < 4; i++) {
         const sat = new Date(firstSat);
